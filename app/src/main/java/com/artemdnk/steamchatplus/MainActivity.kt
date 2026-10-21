@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity(), WebHolder.Host, Navigator {
         }
         b.bottomNav.selectedItemId = currentTab
         b.bottomNav.setOnItemSelectedListener { item ->
-            showTab(item.itemId); true
+            switchTo(item.itemId); true
         }
         b.bottomNav.setOnItemReselectedListener {
             if (fm.backStackEntryCount > 0) fm.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
@@ -202,7 +202,13 @@ class MainActivity : AppCompatActivity(), WebHolder.Host, Navigator {
         else -> ChatsFragment()
     }
 
+    /** Selects a tab programmatically; the nav listener then calls [switchTo]. */
     private fun showTab(id: Int) {
+        if (b.bottomNav.selectedItemId != id) b.bottomNav.selectedItemId = id else switchTo(id)
+    }
+
+    /** Shows the tab's fragment. Never touches bottomNav selection (that would re-enter the listener). */
+    private fun switchTo(id: Int) {
         val fm = supportFragmentManager
         if (fm.backStackEntryCount > 0) fm.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
         currentTab = id
@@ -212,7 +218,6 @@ class MainActivity : AppCompatActivity(), WebHolder.Host, Navigator {
             if (tid == id) tx.show(f) else tx.hide(f)
         }
         tx.commit()
-        if (b.bottomNav.selectedItemId != id) b.bottomNav.selectedItemId = id
         if (userWeb) userWeb = false
         renderTitle()
         renderMode()
