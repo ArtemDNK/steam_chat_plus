@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/cat_notifications" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            app:key="notifications"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_notifications"
+            app:summary="@string/pref_notifications_sum" />
+        <SwitchPreferenceCompat
+            app:key="keep_alive"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_keep_alive"
+            app:summary="@string/pref_keep_alive_sum" />
+        <Preference
+            app:key="battery"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_battery" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/cat_display" app:iconSpaceReserved="false">
+        <EditTextPreference
+            app:key="page_width"
+            app:defaultValue="0"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_page_width"
+            app:dialogMessage="@string/pref_page_width_msg"
+            app:useSimpleSummaryProvider="true" />
+        <SeekBarPreference
+            app:key="text_zoom"
+            android:max="200"
+            app:min="50"
+            app:defaultValue="100"
+            app:seekBarIncrement="5"
+            app:showSeekBarValue="true"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_text_zoom" />
+        <SwitchPreferenceCompat
+            app:key="desktop_ua"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_desktop_ua"
+            app:summary="@string/pref_desktop_ua_sum" />
+        <EditTextPreference
+            app:key="custom_css"
+            app:defaultValue=""
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_css"
+            app:summary="@string/pref_css_sum"
+            app:dialogMessage="@string/pref_css_msg" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/cat_account" app:iconSpaceReserved="false">
+        <Preference
+            app:key="logout"
+            app:iconSpaceReserved="false"
+            app:title="@string/pref_logout"
+            app:summary="@string/pref_logout_sum" />
+        <Preference
+            app:key="version"
+            app:iconSpaceReserved="false"
+            app:selectable="false"
+            app:title="@string/pref_version" />
+    </PreferenceCategory>
+</PreferenceScreen>

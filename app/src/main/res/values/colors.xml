@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="steam_bg">#1B2838</color>
+    <color name="steam_bar">#171A21</color>
+    <color name="steam_surface">#2A475E</color>
+    <color name="steam_text">#C7D5E0</color>
+    <color name="steam_accent">#66C0F4</color>
+    <color name="call_bar">#3D7A2A</color>
+</resources>

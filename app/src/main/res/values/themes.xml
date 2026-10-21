@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SteamChatPlus" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/steam_accent</item>
+        <item name="colorOnPrimary">@color/steam_bar</item>
+        <item name="colorSecondary">@color/steam_accent</item>
+        <item name="colorSurface">@color/steam_bg</item>
+        <item name="colorOnSurface">@color/steam_text</item>
+        <item name="android:colorBackground">@color/steam_bg</item>
+        <item name="android:windowBackground">@color/steam_bg</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    </style>
+</resources>

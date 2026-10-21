@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Steam Chat+</string>
+    <string name="settings">Настройки</string>
+
+    <string name="menu_home">Чат</string>
+    <string name="menu_reload">Обновить</string>
+
+    <string name="call_title">Голосовой чат</string>
+    <string name="call_mic_on">Микрофон включён</string>
+    <string name="call_mic_off">Микрофон выключен</string>
+    <string name="call_speaker">громкая связь</string>
+    <string name="call_earpiece">разговорный динамик</string>
+    <string name="action_mute">Выкл. микрофон</string>
+    <string name="action_unmute">Вкл. микрофон</string>
+    <string name="action_speaker">Громкая связь</string>
+    <string name="action_earpiece">К уху</string>
+
+    <string name="bg_title">Steam Chat+ на связи</string>
+    <string name="bg_text">Чат подключён, уведомления придут</string>
+
+    <string name="ch_messages">Сообщения</string>
+    <string name="ch_call">Голосовой чат</string>
+    <string name="ch_background">Работа в фоне</string>
+
+    <string name="mic_denied">Без доступа к микрофону звонки не работают</string>
+    <string name="load_error">Ошибка загрузки: %1$s</string>
+    <string name="renderer_restarted">Движок страницы перезапущен</string>
+    <string name="no_app_for_link">Нет приложения, чтобы открыть ссылку</string>
+
+    <string name="cat_notifications">Уведомления</string>
+    <string name="pref_notifications">Уведомления о сообщениях</string>
+    <string name="pref_notifications_sum">Показывать сообщения Steam как уведомления Android</string>
+    <string name="pref_keep_alive">Оставаться на связи в фоне</string>
+    <string name="pref_keep_alive_sum">Держит чат подключённым, чтобы уведомления приходили при свёрнутом приложении. Тратит батарею</string>
+    <string name="pref_battery">Оптимизация батареи</string>
+    <string name="pref_battery_on">Отключена — фон работает надёжно</string>
+    <string name="pref_battery_off">Включена — система может обрывать фон. Нажмите, чтобы отключить</string>
+
+    <string name="cat_display">Отображение</string>
+    <string name="pref_page_width">Ширина страницы, px</string>
+    <string name="pref_page_width_msg">0 — по ширине экрана. Если вёрстка Steam ломается, попробуйте 700–1000: страница уменьшится до экрана, масштаб — щипком.</string>
+    <string name="pref_text_zoom">Размер текста, %</string>
+    <string name="pref_desktop_ua">Представляться десктопным Chrome</string>
+    <string name="pref_desktop_ua_sum">Steam отдаёт полную веб-версию чата со звонками</string>
+    <string name="pref_css">Свой CSS</string>
+    <string name="pref_css_sum">Добавляется в страницу чата</string>
+    <string name="pref_css_msg">Например, чтобы скрыть элемент: .className { display: none !important; }</string>
+
+    <string name="cat_account">Аккаунт</string>
+    <string name="pref_logout">Выйти из Steam</string>
+    <string name="pref_logout_sum">Удалить cookies и данные страницы</string>
+    <string name="pref_logout_confirm">Выйти из аккаунта и очистить данные?</string>
+    <string name="pref_version">Версия</string>
+</resources>
