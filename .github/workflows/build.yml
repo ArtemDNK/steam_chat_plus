@@ -68,8 +68,12 @@ jobs:
           name: SteamChatPlus-apk
           path: out/*.apk
 
-      - name: GitHub Release (on tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: GitHub Release
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          name: Steam Chat+ ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('1.0.{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
           files: out/*.apk
