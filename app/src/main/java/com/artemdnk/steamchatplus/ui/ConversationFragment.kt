@@ -228,21 +228,21 @@ private class MessageAdapter(private val isGroup: Boolean) :
             image.setOnClickListener(null)
         }
 
-        val text = v.findViewById<TextView>(R.id.text)
-        text.maxWidth = maxW
+        val body = v.findViewById<TextView>(R.id.text)
+        body.maxWidth = maxW
         when {
             m.deleted -> {
-                text.text = ctx.getString(R.string.message_deleted)
-                text.setTypeface(null, Typeface.ITALIC)
-                text.isVisible = true
+                body.text = ctx.getString(R.string.message_deleted)
+                body.setTypeface(null, Typeface.ITALIC)
+                body.isVisible = true
             }
             else -> {
-                text.text = m.text
-                text.setTypeface(null, Typeface.NORMAL)
-                text.isVisible = m.text.isNotEmpty() || url == null
+                body.text = m.text
+                body.setTypeface(null, Typeface.NORMAL)
+                body.isVisible = m.text.isNotEmpty() || url == null
             }
         }
-        text.setOnLongClickListener {
+        body.setOnLongClickListener {
             val cm = ctx.getSystemService(ClipboardManager::class.java)
             cm.setPrimaryClip(ClipData.newPlainText("message", m.text))
             Toast.makeText(ctx, R.string.copied, Toast.LENGTH_SHORT).show()
