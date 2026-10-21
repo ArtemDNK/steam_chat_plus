@@ -7,6 +7,7 @@ class App : Application() {
         super.onCreate()
         instance = this
         Notifier.createChannels(this)
+        SteamState.addIncomingListener { Notifier.syncIncoming(this, it) }
     }
 
     companion object {

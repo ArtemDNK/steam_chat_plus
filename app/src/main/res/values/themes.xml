@@ -10,4 +10,12 @@
         <item name="android:windowBackground">@color/steam_bg</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
+    <style name="App.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">#1F3A52</item>
+    </style>
+
+    <style name="App.Avatar" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

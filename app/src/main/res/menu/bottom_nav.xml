@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/tab_chats" android:icon="@drawable/ic_stat_chat" android:title="@string/tab_chats" />
+    <item android:id="@+id/tab_groups" android:icon="@drawable/ic_group" android:title="@string/tab_groups" />
+    <item android:id="@+id/tab_friends" android:icon="@drawable/ic_person" android:title="@string/tab_friends" />
+    <item android:id="@+id/tab_calls" android:icon="@drawable/ic_stat_call" android:title="@string/tab_calls" />
+</menu>

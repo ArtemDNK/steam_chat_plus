@@ -79,6 +79,7 @@ object PageBridge : WebViewCompat.WebMessageListener {
             )
             "notifyClose" -> Notifier.closeFromPage(ctx, proxy, json.optInt("id"))
             "notifyPermission" -> WebHolder.host?.requestNotificationPermission()
+            "api" -> SteamState.onApi(json.optString("k"), json.opt("v"))
         }
     }
 
@@ -91,6 +92,7 @@ object PageBridge : WebViewCompat.WebMessageListener {
 
     /** New top-level document: forget frames of the old one. */
     fun onMainFrameNavigation() {
+        SteamState.onPageReset()
         frames.clear()
         legacyFrame.callActive = false
         legacyFrame.muted = false
@@ -103,6 +105,12 @@ object PageBridge : WebViewCompat.WebMessageListener {
     }
 
     fun setMuted(m: Boolean) = broadcast(cmd("mute", m))
+
+    /** Command for the native-UI API in inject.js (top frame only acts on it). */
+    fun api(op: String, args: JSONObject = JSONObject()) {
+        args.put("t", "api").put("op", op)
+        broadcast(args.toString())
+    }
 
     fun notificationClicked(proxy: JavaScriptReplyProxy?, jsId: Int) {
         val c = JSONObject().put("t", "click").put("id", jsId).toString()

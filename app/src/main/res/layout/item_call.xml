@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    app:cardBackgroundColor="#1E3B2A"
+    app:cardCornerRadius="16dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/callState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAllCaps="true"
+            android:textColor="#9FD88A"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/callName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/callSub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#B8CDB0"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/callMembers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/cMic"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/round_button_dark"
+                android:contentDescription="@string/action_mute"
+                android:src="@drawable/ic_mic" />
+
+            <ImageButton
+                android:id="@+id/cDeafen"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/round_button_dark"
+                android:contentDescription="@string/action_deafen"
+                android:src="@drawable/ic_stat_call" />
+
+            <ImageButton
+                android:id="@+id/cSpeaker"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/round_button_dark"
+                android:contentDescription="@string/action_speaker"
+                android:src="@drawable/ic_speaker" />
+
+            <ImageButton
+                android:id="@+id/cHangup"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/round_button_red"
+                android:contentDescription="@string/action_hangup"
+                android:src="@drawable/ic_call_end" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

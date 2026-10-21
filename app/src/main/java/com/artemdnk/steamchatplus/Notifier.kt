@@ -21,6 +21,9 @@ object Notifier {
     const val CH_MESSAGES = "messages"
     const val CH_CALL = "call"
     const val CH_BACKGROUND = "background"
+    const val CH_INCOMING = "incoming"
+    const val EXTRA_ACCEPT_CALL = "accept_call"
+    const val EXTRA_SHOW_CALLS = "show_calls"
     const val ID_SESSION = 1
     const val EXTRA_NOTIF_KEY = "notif_key"
     private const val GROUP = "steam_messages"
@@ -42,7 +45,10 @@ object Notifier {
                 NotificationChannel(CH_CALL, ctx.getString(R.string.ch_call), NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { setSound(null, null) },
                 NotificationChannel(CH_BACKGROUND, ctx.getString(R.string.ch_background), NotificationManager.IMPORTANCE_MIN)
-                    .apply { setShowBadge(false) }
+                    .apply { setShowBadge(false) },
+                // The page already plays Steam's ring sound; the notification only vibrates.
+                NotificationChannel(CH_INCOMING, ctx.getString(R.string.ch_incoming), NotificationManager.IMPORTANCE_HIGH)
+                    .apply { setSound(null, null); enableVibration(true); vibrationPattern = longArrayOf(0, 600, 400, 600) }
             )
         )
     }
@@ -128,6 +134,67 @@ object Notifier {
         origins.keys.toList().forEach { nm.cancel(it) }
         origins.clear()
         nm.cancel(ID_SUMMARY)
+    }
+
+    // ---------- incoming voice calls ----------
+
+    private val shownIncoming = HashSet<Long>()
+    private fun incomingId(accountId: Long) = 0x20000 + (accountId and 0xffff).toInt()
+
+    /** Keeps one heads-up notification per pending incoming 1:1 call. */
+    fun syncIncoming(ctx: Context, people: List<Person>) {
+        val nm = NotificationManagerCompat.from(ctx)
+        val ids = people.map { it.id }.toSet()
+        shownIncoming.filter { it !in ids }.forEach { nm.cancel(incomingId(it)); shownIncoming.remove(it) }
+        if (!Permissions.hasNotifications(ctx)) return
+        people.filter { it.id !in shownIncoming }.forEach { p ->
+            shownIncoming += p.id
+            val open = PendingIntent.getActivity(
+                ctx, incomingId(p.id),
+                Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    .putExtra(EXTRA_SHOW_CALLS, true),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            val accept = PendingIntent.getActivity(
+                ctx, incomingId(p.id) + 1,
+                Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    .putExtra(EXTRA_ACCEPT_CALL, p.id),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            val reject = PendingIntent.getService(
+                ctx, incomingId(p.id) + 2,
+                Intent(ctx, SessionService::class.java).setAction(SessionService.ACTION_REJECT)
+                    .putExtra(SessionService.EXTRA_ACCOUNT, p.id),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            val build = { icon: Bitmap? ->
+                NotificationCompat.Builder(ctx, CH_INCOMING)
+                    .setSmallIcon(R.drawable.ic_stat_call)
+                    .setContentTitle(p.name)
+                    .setContentText(ctx.getString(R.string.incoming_call))
+                    .setLargeIcon(icon)
+                    .setCategory(NotificationCompat.CATEGORY_CALL)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setOngoing(true)
+                    .setAutoCancel(true)
+                    .setContentIntent(open)
+                    .addAction(R.drawable.ic_call_end, ctx.getString(R.string.action_reject), reject)
+                    .addAction(R.drawable.ic_call, ctx.getString(R.string.action_accept), accept)
+                    .setTimeoutAfter(60_000)
+                    .build()
+            }
+            runCatching { nm.notify(incomingId(p.id), build(null)) }
+            val url = p.avatar.takeIf { it.startsWith("https://") } ?: return@forEach
+            io.execute {
+                val bmp = loadBitmap(url) ?: return@execute
+                main.post { if (p.id in shownIncoming) runCatching { nm.notify(incomingId(p.id), build(bmp)) } }
+            }
+        }
+    }
+
+    fun cancelIncoming(ctx: Context, accountId: Long) {
+        shownIncoming.remove(accountId)
+        NotificationManagerCompat.from(ctx).cancel(incomingId(accountId))
     }
 
     private fun loadBitmap(url: String): Bitmap? = runCatching {

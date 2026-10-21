@@ -39,6 +39,14 @@ class SessionService : Service() {
         when (intent?.action) {
             ACTION_MUTE -> CallManager.toggleMute()
             ACTION_SPEAKER -> CallManager.toggleSpeaker()
+            ACTION_HANGUP -> SteamState.hangup()
+            ACTION_REJECT -> {
+                val id = intent?.getLongExtra(EXTRA_ACCOUNT, 0L) ?: 0L
+                if (id != 0L) {
+                    SteamState.reject(id)
+                    Notifier.cancelIncoming(this, id)
+                }
+            }
         }
         refresh()
         return START_NOT_STICKY
@@ -109,7 +117,7 @@ class SessionService : Service() {
         }
         return NotificationCompat.Builder(this, Notifier.CH_CALL)
             .setSmallIcon(R.drawable.ic_stat_call)
-            .setContentTitle(getString(R.string.call_title))
+            .setContentTitle(SteamState.voice.value?.title?.takeIf { it.isNotBlank() } ?: getString(R.string.call_title))
             .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)
@@ -129,6 +137,7 @@ class SessionService : Service() {
                 getString(if (speaker) R.string.action_earpiece else R.string.action_speaker),
                 actionIntent(ACTION_SPEAKER, 2)
             )
+            .addAction(R.drawable.ic_call_end, getString(R.string.action_hangup), actionIntent(ACTION_HANGUP, 3))
             .build()
     }
 
@@ -165,6 +174,9 @@ class SessionService : Service() {
         private const val TAG = "SessionService"
         const val ACTION_MUTE = "com.artemdnk.steamchatplus.MUTE"
         const val ACTION_SPEAKER = "com.artemdnk.steamchatplus.SPEAKER"
+        const val ACTION_HANGUP = "com.artemdnk.steamchatplus.HANGUP"
+        const val ACTION_REJECT = "com.artemdnk.steamchatplus.REJECT"
+        const val EXTRA_ACCOUNT = "account"
 
         private var instance: SessionService? = null
         private var callStartedAt = 0L
