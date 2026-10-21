@@ -52,4 +52,70 @@
     <string name="pref_logout_sum">Удалить cookies и данные страницы</string>
     <string name="pref_logout_confirm">Выйти из аккаунта и очистить данные?</string>
     <string name="pref_version">Версия</string>
+
+    <string name="tab_chats">Чаты</string>
+    <string name="tab_groups">Группы</string>
+    <string name="tab_friends">Друзья</string>
+    <string name="tab_calls">Звонки</string>
+    <string name="loading_steam">Подключаемся к Steam…</string>
+    <string name="menu_web">Веб-версия</string>
+    <string name="menu_native">Вернуться в приложение</string>
+
+    <string name="action_call">Позвонить</string>
+    <string name="action_hangup">Завершить</string>
+    <string name="action_deafen">Выключить звук</string>
+    <string name="action_accept">Принять</string>
+    <string name="action_reject">Отклонить</string>
+    <string name="action_send">Отправить</string>
+    <string name="incoming_call">Входящий голосовой звонок</string>
+    <string name="call_connecting">Подключение…</string>
+    <string name="call_in_progress">Идёт разговор</string>
+    <string name="ch_incoming">Входящие звонки</string>
+
+    <string name="state_ingame">В игре</string>
+    <string name="state_online">В сети</string>
+    <string name="state_away">Отошёл</string>
+    <string name="state_offline">Не в сети</string>
+    <string name="state_last_seen">Был(а) в сети %1$s</string>
+    <string name="yesterday">вчера</string>
+
+    <string name="typing">печатает…</string>
+    <string name="in_voice_with_you">🔊 голосовой чат</string>
+    <string name="you_prefix">Вы: </string>
+    <string name="empty_chats">Недавних переписок нет.\nНачните чат во вкладке «Друзья».</string>
+
+    <string name="empty_groups">У вас нет групповых чатов.\nСоздать группу или вступить в неё можно в веб-версии (значок глобуса сверху).</string>
+    <string name="group_in_voice">🔊 в голосе: %1$d</string>
+    <string name="group_members">%1$d в сети · %2$d участников</string>
+    <string name="group_gone">Группа недоступна</string>
+    <string name="section_text_channels">Текстовые каналы</string>
+    <string name="section_voice_channels">Голосовые каналы</string>
+    <string name="text_channel">Текстовый канал</string>
+    <string name="voice_channel">Голосовой канал</string>
+    <string name="default_channel">Основной канал</string>
+    <string name="no_channels">Текстовых каналов нет</string>
+    <string name="no_voice_channels">Голосовых каналов нет</string>
+    <string name="channel_empty">Никого нет</string>
+    <string name="join">Войти</string>
+    <string name="you_are_here">Вы здесь</string>
+
+    <string name="search_friends">Поиск друзей</string>
+    <string name="empty_friends">Список друзей пуст</string>
+    <string name="nothing_found">Ничего не найдено</string>
+    <string name="section_ingame">В игре</string>
+    <string name="section_online">В сети</string>
+    <string name="section_offline">Не в сети</string>
+
+    <string name="section_friends_in_voice">Друзья в голосе</string>
+    <string name="empty_voice_channels">В ваших группах нет голосовых каналов</string>
+    <string name="empty_friends_in_voice">Сейчас никто из друзей не сидит в голосовых каналах</string>
+    <string name="section_call_friend">Позвонить</string>
+    <string name="empty_online">Никого из друзей нет в сети</string>
+
+    <string name="message_hint">Сообщение</string>
+    <string name="message_deleted">Сообщение удалено</string>
+    <string name="message_failed">⚠ не отправлено</string>
+    <string name="system_message">Системное сообщение</string>
+    <string name="copied">Скопировано</string>
+    <string name="image">Изображение</string>
 </resources>

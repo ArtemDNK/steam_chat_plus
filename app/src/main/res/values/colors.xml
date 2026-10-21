@@ -6,4 +6,11 @@
     <color name="steam_text">#C7D5E0</color>
     <color name="steam_accent">#66C0F4</color>
     <color name="call_bar">#3D7A2A</color>
+    <color name="state_online">#57CBDE</color>
+    <color name="state_ingame">#90BA3C</color>
+    <color name="state_away">#4C7A8A</color>
+    <color name="state_offline">#6D7480</color>
+    <color name="text_secondary">#8F98A0</color>
+    <color name="divider">#22303F</color>
+    <color name="danger">#E05A55</color>
 </resources>

@@ -51,6 +51,7 @@
     if (c.t === 'hidden') setHidden(!!c.v);
     else if (c.t === 'mute') setMuted(!!c.v);
     else if (c.t === 'click') notifClick(c.id);
+    else if (c.t === 'api' && scp.api) scp.api.cmd(c);
   };
 
   // ---------- WebRTC tracking ----------
@@ -61,7 +62,7 @@
       return origGUM(constraints).then(function (stream) {
         scp.streams.push(stream);
         stream.getAudioTracks().forEach(function (t) {
-          if (scp.muted) t.enabled = false;
+          if (scp.muted && !voiceStore()) t.enabled = false;
           t.addEventListener('ended', check);
         });
         check();
@@ -124,7 +125,13 @@
       return pc.connectionState !== 'closed' && pc.signalingState !== 'closed';
     });
     var pcActive = scp.pcs.some(pcAlive);
-    var active = pcActive || micLive();
+    var vs = voiceStore();
+    var steamVoice = false;
+    if (vs) {
+      try { steamVoice = !!vs.IsAnyVoiceActive(); } catch (_) {}
+      try { scp.muted = !!vs.IsMicMuted(); } catch (_) {}
+    }
+    var active = pcActive || micLive() || steamVoice;
     var key = active + '|' + scp.muted;
     if (key !== scp.last) {
       scp.last = key;
@@ -133,7 +140,18 @@
   }
   setInterval(check, 1500);
 
+  function voiceStore() {
+    try { return window.g_FriendsUIApp && window.g_FriendsUIApp.VoiceStore; } catch (_) { return null; }
+  }
+
   function setMuted(m) {
+    var vs = voiceStore();
+    if (vs && typeof vs.ToggleMicMuting === 'function') {
+      // Steam's own mute: other people see the muted icon and Steam's UI stays in sync.
+      try { if (!!vs.IsMicMuted() !== m) vs.ToggleMicMuting(); } catch (_) {}
+      check();
+      return;
+    }
     scp.muted = m;
     scp.streams.forEach(function (s) {
       s.getAudioTracks().forEach(function (t) { t.enabled = !m; });
@@ -247,6 +265,313 @@
   } else {
     applyLayout();
   }
+
+  // ---------- native UI API ----------
+  // Reads Steam's own web-chat stores (g_FriendsUIApp) and mirrors them to Android.
+  // Only the top-level /chat page runs it. Each section is posted only when it changes.
+  if (window === window.top) (function () {
+    var api = scp.api = { open: null, sent: {}, status: '', started: Date.now(), lastActivity: 0 };
+
+    function App() { return window.g_FriendsUIApp; }
+    function safe(f, d) { try { var v = f(); return v === undefined || v === null ? d : v; } catch (e) { return d; } }
+    function V(o, k) {
+      if (!o) return undefined;
+      try { var v = o[k]; return typeof v === 'function' ? v.call(o) : v; } catch (e) { return undefined; }
+    }
+    function arr(x) {
+      if (!x) return [];
+      if (Array.isArray(x)) return x;
+      try { if (typeof x.values === 'function') return Array.from(x.values()); } catch (_) {}
+      try { return Array.from(x); } catch (_) { return []; }
+    }
+    function idOf(x) {
+      if (typeof x === 'number') return x;
+      if (typeof x === 'string') return Number(x) || 0;
+      return Number(V(x, 'accountid') || V(x, 'GetAccountID') || V(x, 'unAccountID') || V(x, 'm_unAccountID') || 0);
+    }
+
+    function bbcode(raw) {
+      var s = String(raw || ''), images = [];
+      s = s.replace(/\[img\b[^\]]*?src=["']?([^"'\]\s]+)["']?[^\]]*\](?:\s*\[\/img\])?/gi, function (m, u) { images.push(u); return ''; });
+      s = s.replace(/\[giphy\b[^\]]*\]([^\[]*)\[\/giphy\]/gi, function (m, id) {
+        id = id.trim(); if (id) images.push('https://media.giphy.com/media/' + id + '/giphy.gif'); return '';
+      });
+      s = s.replace(/\[emoticon\]([^\[]*)\[\/emoticon\]/gi, ':$1:');
+      s = s.replace(/\[emoticon=?["']?([^\]"']*)["']?\](?:\[\/emoticon\])?/gi, ':$1:');
+      s = s.replace(/\[sticker\b[^\]]*?type=["']?([^"'\]\s]+)["']?[^\]]*\](?:\[\/sticker\])?/gi, '[стикер $1]');
+      s = s.replace(/\[url=["']?([^\]"']+)["']?\]([\s\S]*?)\[\/url\]/gi, function (m, u, t) { return t && t !== u ? t + ' (' + u + ')' : u; });
+      s = s.replace(/\[mention=[^\]]*\]([\s\S]*?)\[\/mention\]/gi, '$1');
+      s = s.replace(/\[spoiler\]([\s\S]*?)\[\/spoiler\]/gi, '▒$1▒');
+      s = s.replace(/\[\/?[a-z_]+(?:[= ][^\]]*)?\]/gi, '');
+      s = s.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
+      s.replace(/https?:\/\/\S+\.(?:png|jpe?g|gif|webp)(?:\?\S*)?/gi, function (u) { images.push(u); return u; });
+      return { text: s.trim(), images: images };
+    }
+
+    function person(p) {
+      if (!p) return null;
+      var per = V(p, 'persona') || {};
+      var ingame = !!V(per, 'is_ingame'), online = !!V(per, 'is_online'), away = !!V(per, 'is_awayOrSnooze');
+      var rich = V(p, 'current_game_rich_presence');
+      return {
+        id: idOf(p) || Number(V(per, 'GetAccountID') || 0),
+        name: String(V(p, 'display_name') || V(per, 'm_strPlayerName') || ''),
+        avatar: String(V(per, 'avatar_url_medium') || ''),
+        state: ingame ? 2 : online ? (away ? 3 : 1) : 0,
+        game: ingame ? String(V(per, 'GetCurrentGameName') || V(p, 'current_game_name') || '') : '',
+        rich: typeof rich === 'string' ? rich : '',
+        seen: Number(V(per, 'last_seen_online') || 0)
+      };
+    }
+    function personById(id) {
+      var fs = App().FriendStore;
+      var p = safe(function () { return fs.GetFriendIfCached(id); }, null) ||
+              safe(function () { return fs.GetPlayer(id); }, null);
+      return person(p) || { id: id, name: String(id), avatar: '', state: 0, game: '', rich: '', seen: 0 };
+    }
+
+    function ready() {
+      var a = App();
+      return !!(a && a.FriendStore && a.ChatStore && a.VoiceStore &&
+        V(a.FriendStore, 'friends_list_ready') !== false && V(a.ChatStore, 'chat_group_list_ready') !== false);
+    }
+
+    // ----- sections -----
+    function secSelf() { return person(V(App().FriendStore, 'self')); }
+
+    function secFriends() {
+      return arr(V(App().FriendStore, 'all_friends')).filter(function (f) { return V(f, 'is_friend') !== false; })
+        .map(person).filter(Boolean);
+    }
+
+    function secChats() {
+      var cs = App().ChatStore;
+      var list = safe(function () { return cs.GetRecentChats(); }, null) ||
+                 safe(function () { return cs.FriendChatStore.GetAllChats(); }, []);
+      return arr(list).filter(function (c) { return V(c, 'accountid_partner'); }).map(function (c) {
+        var p = person(V(c, 'chat_partner')) || personById(V(c, 'accountid_partner'));
+        var last = safe(function () { return c.GetLastMessage(); }, null);
+        var text = last ? bbcode(V(last, 'strMessage')) : { text: String(c.m_strLastMessage || ''), images: [] };
+        return {
+          id: p.id, name: p.name, avatar: p.avatar, state: p.state, game: p.game,
+          last: (text.text || (text.images.length ? '🖼 Изображение' : '')),
+          mine: last ? last.unAccountID !== p.id : false,
+          time: Number(V(c, 'time_last_message') || 0),
+          unread: Number(V(c, 'unread_message_count') || 0),
+          voice: !!V(c, 'BVoiceActive'),
+          typing: !!V(c, 'is_friend_typing')
+        };
+      }).sort(function (a, b) { return b.time - a.time; });
+    }
+
+    function room(r) {
+      return {
+        id: String(V(r, 'GetRoomID') || ''),
+        name: String(V(r, 'name') || ''),
+        unread: Number(V(r, 'unread_message_count') || 0),
+        voice: arr(V(r, 'voice_active_member_list')).map(idOf).filter(Boolean),
+        active: !!V(r, 'BVoiceActive'),
+        allowed: V(r, 'GetVoiceAllowed') !== false
+      };
+    }
+    function secGroups() {
+      var cs = App().ChatStore;
+      return arr(cs.m_mapChatGroups).map(function (g) {
+        var text = arr(V(g, 'textRoomList')).map(room), voice = arr(V(g, 'voiceRoomList')).map(room);
+        var lastRoom = V(g, 'room_with_last_message');
+        var last = lastRoom ? safe(function () { return lastRoom.GetLastMessage(); }, null) : null;
+        return {
+          id: String(V(g, 'GetGroupID') || ''),
+          name: String(V(g, 'name') || ''),
+          avatar: String(V(g, 'avatar_url_medium') || ''),
+          online: Number(V(g, 'memberCountOnline') || 0),
+          total: Number(V(g, 'memberCountTotal') || 0),
+          unread: !!V(g, 'hasUnreadChatMessage'),
+          time: Number(V(g, 'time_last_activity') || 0),
+          last: last ? bbcode(V(last, 'strMessage')).text : '',
+          defaultRoom: String(V(g, 'GetDefaultChatID') || ''),
+          text: text, voiceRooms: voice
+        };
+      }).sort(function (a, b) { return b.time - a.time; });
+    }
+
+    function secVoice() {
+      var a = App(), vs = a.VoiceStore, cs = a.ChatStore;
+      var active = !!safe(function () { return vs.IsAnyVoiceActive(); }, false);
+      var partner = Number(safe(function () { return vs.GetActiveOneOnOneVoiceChatAccountID(); }, 0)) || 0;
+      var groupId = String(safe(function () { return vs.GetActiveChatRoomGroupID(); }, '') || '');
+      var roomId = String(safe(function () { return vs.GetActiveVoiceChatID(); }, '') || '');
+      if (groupId === '0') groupId = '';
+      var title = '', subtitle = '', members = [];
+      var selfId = idOf(V(a.FriendStore, 'self'));
+      if (active && partner) {
+        var p = personById(partner);
+        title = p.name; subtitle = 'Личный звонок';
+        members = [selfId, partner];
+        groupId = ''; roomId = '';
+      } else if (active && groupId) {
+        var g = safe(function () { return cs.GetChatRoomGroup(groupId); }, null);
+        var r = g && safe(function () { return g.GetChatRoom(roomId); }, null);
+        title = r ? String(V(r, 'name') || '') : ''; subtitle = g ? String(V(g, 'name') || '') : '';
+        members = r ? arr(V(r, 'voice_active_member_list')).map(idOf) : [];
+      }
+      return {
+        active: active, partner: partner, groupId: groupId, roomId: roomId,
+        title: title, subtitle: subtitle,
+        mic: !!safe(function () { return vs.IsMicMuted(); }, false),
+        out: !!safe(function () { return vs.IsOutputMuted(); }, false),
+        connecting: !!safe(function () { return vs.IsAttemptingInitialConnection() || vs.IsAttemptingReconnect(); }, false),
+        members: members.filter(Boolean).map(personById)
+      };
+    }
+
+    function secIncoming() {
+      var vs = App().VoiceStore;
+      var m = safe(function () { return vs.GetOneOnOneCallsWaitingForJoinOrAccept(); }, null);
+      var ids = [];
+      try { if (m && typeof m.keys === 'function') ids = Array.from(m.keys()).map(Number); } catch (_) {}
+      return ids.filter(function (id) {
+        return id && safe(function () { return vs.BPartnerHasRequestedAndIsInOneOnOneChat(id); }, true) &&
+          !safe(function () { return vs.BSelfHasAcceptedOrInitiatedOneOnOneChat(id); }, false);
+      }).map(personById);
+    }
+
+    // ----- open conversation -----
+    function chatFor(c) {
+      var cs = App().ChatStore;
+      if (c.kind === 'friend') return safe(function () { return cs.GetFriendChat(Number(c.id)); }, null);
+      var g = safe(function () { return cs.GetChatRoomGroup(c.groupId); }, null);
+      if (!g) return null;
+      return safe(function () { return g.GetChatRoom(c.roomId || V(g, 'GetDefaultChatID')); }, null);
+    }
+
+    function secMessages() {
+      var o = api.open; if (!o) return null;
+      var chat = o.chat, a = App();
+      var selfId = idOf(V(a.FriendStore, 'self'));
+      var list = arr(V(chat, 'chat_messages')).slice(-200);
+      var authors = {};
+      var items = list.map(function (m) {
+        var id = Number(m.unAccountID || 0);
+        if (id && !authors[id]) authors[id] = personById(id);
+        var server = !!V(m, 'BIsServerMessage');
+        var b = bbcode(V(m, 'strMessage'));
+        var echo = !!V(m, 'BIsLocalEcho');
+        return {
+          k: (m.rtTimestamp || 0) + '_' + (m.unOrdinal || 0) + (echo ? '_e' + b.text.length : ''),
+          a: id, t: Number(m.rtTimestamp || 0), x: b.text, i: b.images,
+          me: id === selfId, s: server,
+          p: echo && !V(m, 'BHasServerAcknowledged'),
+          f: !!V(m, 'eErrorSending'),
+          d: Number(m.eDeleteState || 0) > 0
+        };
+      });
+      var title = '', subtitle = '', avatar = '', state = 0;
+      if (o.c.kind === 'friend') {
+        var p = personById(Number(o.c.id));
+        title = p.name; avatar = p.avatar; state = p.state;
+        subtitle = V(chat, 'is_friend_typing') ? 'печатает…' : '';
+      } else {
+        var g = safe(function () { return App().ChatStore.GetChatRoomGroup(o.c.groupId); }, null);
+        title = String(V(chat, 'name') || ''); subtitle = g ? String(V(g, 'name') || '') : '';
+        avatar = g ? String(V(g, 'avatar_url_medium') || '') : '';
+      }
+      return {
+        key: o.key, kind: o.c.kind, id: String(o.c.id || ''), groupId: String(o.c.groupId || ''), roomId: String(o.c.roomId || ''),
+        title: title, subtitle: subtitle, avatar: avatar, state: state,
+        voice: !!V(chat, 'BVoiceActive'), more: !!V(chat, 'IsMoreHistoryAvailable'),
+        loading: Number(chat.m_nLoadingHistoryInProgressCount || 0) > 0,
+        authors: authors, items: items
+      };
+    }
+
+    function closeChat() {
+      var o = api.open; if (!o) return;
+      safe(function () { o.chat.OnDeactivate(); });
+      if (o.c.kind === 'room') safe(function () { App().ChatStore.DecRefActiveChatRoomGroup(o.c.groupId); });
+      api.open = null;
+      delete api.sent.messages;
+    }
+
+    function openChat(c) {
+      closeChat();
+      if (c.kind === 'room') safe(function () { App().ChatStore.IncRefActiveChatRoomGroup(c.groupId); });
+      var chat = chatFor(c);
+      if (!chat) { post('api', { k: 'error', v: 'Чат не найден' }); return; }
+      api.open = { c: c, chat: chat, key: c.key || '' };
+      if (!scp.hidden) safe(function () { chat.OnActivate(); });
+      safe(function () { if (!V(chat, 'm_bChatLogsLoaded')) chat.LoadChatLogs(); });
+    }
+
+    function escapeBB(text) { return String(text).replace(/\[/g, '\\['); }
+
+    api.cmd = function (c) {
+      var a = App(); if (!a) return;
+      var vs = a.VoiceStore, cs = a.ChatStore, fs = a.FriendStore;
+      switch (c.op) {
+        case 'resync': api.sent = {}; break;
+        case 'open': openChat(c); break;
+        case 'close': closeChat(); break;
+        case 'send': if (api.open && c.text) safe(function () { api.open.chat.SendChatMessage(escapeBB(c.text)); }); break;
+        case 'typing': if (api.open) safe(function () { api.open.chat.OnTyping(); }); break;
+        case 'more': if (api.open) safe(function () { api.open.chat.LoadMoreHistory(); }); break;
+        case 'retry': break;
+        case 'callFriend':
+          var fc = safe(function () { return cs.GetFriendChat(Number(c.id)); }, null);
+          if (fc && !V(fc, 'BVoiceActive')) safe(function () { fc.ToggleVoiceChat(); });
+          break;
+        case 'joinRoom':
+          safe(function () { cs.IncRefActiveChatRoomGroup(c.groupId); });
+          var g = safe(function () { return cs.GetChatRoomGroup(c.groupId); }, null);
+          var r = g && safe(function () { return g.GetChatRoom(c.roomId); }, null);
+          if (r && !V(r, 'BVoiceActive')) {
+            if (typeof r.StartVoiceChat === 'function') safe(function () { r.StartVoiceChat(); });
+            else safe(function () { r.ToggleVoiceChat(); });
+          }
+          break;
+        case 'hangup': safe(function () { vs.OnUserEndVoiceChat(); }); break;
+        case 'deafen': safe(function () { vs.ToggleOutputMuting(); }); break;
+        case 'accept': safe(function () { vs.AcceptPartnersOneOnOneChatRequest(Number(c.id)); }); break;
+        case 'reject': safe(function () { vs.OnRejectOneOnOneVoiceChatForPartner(Number(c.id)); }); break;
+        case 'activity':
+          // Native taps never reach the page; tell Steam the user is here so it doesn't go "Away".
+          safe(function () { fs.ResetIdleState(); });
+          try { document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })); } catch (_) {}
+          break;
+      }
+      setTimeout(tick, 60);
+    };
+
+    function send(k, v) {
+      var s = JSON.stringify(v);
+      if (api.sent[k] === s) return;
+      api.sent[k] = s;
+      post('api', { k: k, v: v });
+    }
+
+    function tick() {
+      var onChat = /^\/chat/.test(location.pathname);
+      var st = !onChat ? 'web' : ready() ? 'ready' : 'loading';
+      if (st !== api.status || !api.sent.status) { api.status = st; api.sent.status = '1'; post('api', { k: 'status', v: st }); }
+      if (st !== 'ready') return;
+      try {
+        send('self', secSelf());
+        send('friends', secFriends());
+        send('chats', secChats());
+        send('groups', secGroups());
+        send('voice', secVoice());
+        send('incoming', secIncoming());
+        if (api.open) {
+          if (!scp.hidden && Number(V(api.open.chat, 'unread_message_count') || 0) > 0) safe(function () { api.open.chat.OnActivate(); });
+          send('messages', secMessages());
+        }
+      } catch (e) {
+        post('api', { k: 'error', v: String(e && e.message || e) });
+      }
+    }
+    setInterval(tick, 1000);
+    setTimeout(tick, 300);
+  })();
 
   // ---------- hello ----------
   bindBridge();
